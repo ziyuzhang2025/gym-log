@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+* { box-sizing: border-box; }
+html { background: #fff; }
+body { margin: 0; background: #fff; color: #171717; font-family: Arial, Helvetica, sans-serif; }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+}
+@layer components {
+.shell { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+.nav { display: flex; gap: 16px; margin-bottom: 34px; font-size: 14px; color: #737373; }
+.nav a:hover, .nav a.active { color: #171717; }
+.page-title { margin: 0; font-size: 30px; letter-spacing: -0.04em; }
+.muted { color: #737373; }
+.card { border: 1px solid #e5e5e5; border-radius: 10px; background: #fff; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 8px 12px; border: 1px solid #171717; border-radius: 7px; background: #171717; color: #fff; font-size: 14px; }
+.button.secondary { background: #fff; color: #171717; border-color: #d4d4d4; }
+.button.small { min-height: 30px; padding: 5px 9px; font-size: 12px; }
+.field { width: 100%; border: 1px solid #d4d4d4; border-radius: 6px; padding: 8px; background: white; color: #171717; }
+.set-row { display: grid; grid-template-columns: 24px minmax(48px, 1fr) 70px 70px; gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid #f0f0f0; font-size: 14px; }
+.set-row input[type="text"] { min-width: 0; padding: 6px; font-size: 13px; }
+.checkbox { appearance: none; width: 20px; height: 20px; margin: 0; border: 1px solid #a3a3a3; border-radius: 50%; display: grid; place-content: center; }
+.checkbox:checked { background: #171717; border-color: #171717; }
+.checkbox:checked::after { content: "✓"; color: white; font-size: 13px; }
+.progress { height: 5px; overflow: hidden; background: #e5e5e5; border-radius: 999px; }
+.progress > span { display: block; height: 100%; background: #171717; }
+.exercise-complete { color: #737373; }
+.plan-day { padding: 16px; margin-bottom: 14px; }
+.plan-exercise { display: grid; grid-template-columns: minmax(0, 1fr) 58px 86px 86px auto; gap: 8px; align-items: center; margin-top: 10px; }
+.history-item { padding: 15px 0; border-top: 1px solid #e5e5e5; }
+@media (max-width: 560px) { .plan-exercise { grid-template-columns: 1fr 52px 68px; } .plan-exercise input:nth-child(4) { grid-column: 1 / 3; } .set-row { grid-template-columns: 24px 1fr 62px 62px; } }
+}
