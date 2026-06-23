@@ -7,23 +7,25 @@ import { ExerciseCard } from "@/components/ExerciseCard";
 import { WorkoutHeader } from "@/components/WorkoutHeader";
 import { WorkoutBurnForm } from "@/components/WorkoutBurnForm";
 import { defaultPlan } from "@/lib/defaultPlan";
-import { loadActiveDay, loadPlan, loadSessions, saveActiveDay, savePlan, saveSessions } from "@/lib/storage";
+import { loadActiveDay, saveActiveDay } from "@/lib/storage";
 import type { CompletedSet, WorkoutPlan, WorkoutSession } from "@/lib/types";
 import { getOrCreateSession, progress, updateSet } from "@/lib/workout";
 import { defaultSessionType, workoutBurnEstimate } from "@/lib/workoutBurn";
+import { loadActivePlan, provisionPlan } from "@/lib/repository/plans";
+import { saveSessionWithSets } from "@/lib/repository/sessions";
 
 export default function Home() {
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [activeDayId, setActiveDayId] = useState("");
 
-  useEffect(() => { const savedPlan = loadPlan() ?? defaultPlan; if (!loadPlan()) savePlan(savedPlan); const savedSessions = loadSessions(); const dayId = loadActiveDay() ?? savedPlan.days[0]?.id ?? ""; const day = savedPlan.days.find((item) => item.id === dayId) ?? savedPlan.days[0]; if (day) { const session = getOrCreateSession(savedSessions, day); const nextSessions = savedSessions.some((item) => item.id === session.id) ? savedSessions.map((item) => item.id === session.id ? session : item) : [...savedSessions, session]; setSessions(nextSessions); saveSessions(nextSessions); } else setSessions(savedSessions); setPlan(savedPlan); setActiveDayId(day?.id ?? ""); }, []);
+  useEffect(() => { (async () => { let savedPlan = await loadActivePlan(); if (!savedPlan) { await provisionPlan(defaultPlan); savedPlan = await loadActivePlan(); } if (!savedPlan) return; const dayId = loadActiveDay() ?? savedPlan.days[0]?.id ?? ""; setPlan(savedPlan); setActiveDayId(dayId); })().catch(() => {}); }, []);
   if (!plan) return <AppShell><p className="muted">Loading your log…</p></AppShell>;
   if (!plan.days.length) return <AppShell><h1 className="page-title">Gym Log</h1><EmptyState /></AppShell>;
   const activeDay = plan.days.find((day) => day.id === activeDayId) ?? plan.days[0];
   const session = getOrCreateSession(sessions, activeDay);
   const status = progress(activeDay, session);
-  const persistSession = (next: WorkoutSession) => { const saved = sessions.some((item) => item.id === next.id) ? sessions.map((item) => item.id === next.id ? next : item) : [...sessions, next]; setSessions(saved); saveSessions(saved); };
+  const persistSession = (next: WorkoutSession) => { const saved = sessions.some((item) => item.id === next.id) ? sessions.map((item) => item.id === next.id ? next : item) : [...sessions, next]; setSessions(saved); void saveSessionWithSets(next); };
   const changeDay = (id: string) => { const day = plan.days.find((item) => item.id === id); if (day) persistSession(getOrCreateSession(sessions, day)); setActiveDayId(id); saveActiveDay(id); };
   const changeSet = (exerciseId: string, setIndex: number, change: Partial<CompletedSet>) => persistSession(updateSet(activeDay, session, { exerciseId, setIndex, ...change }));
 
