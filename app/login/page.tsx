@@ -1,0 +1,7 @@
+"use client";
+import Link from "next/link";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+
+export default function LoginPage() { const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [message, setMessage] = useState(""); const [loading, setLoading] = useState(false); const submit = async (event: React.FormEvent) => { event.preventDefault(); if (!isSupabaseConfigured) return setMessage("Supabase is not configured yet."); setLoading(true); const { error } = await createClient().auth.signInWithPassword({ email, password }); setLoading(false); if (error) return setMessage("Unable to sign in. Check your email and password."); const next = new URLSearchParams(window.location.search).get("next") || "/"; window.location.assign(next); }; return <main className="shell auth-page"><h1 className="page-title">Sign in</h1><form className="card auth-form" onSubmit={submit}><label>Email<input className="field" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label><label>Password<input className="field" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>{message && <p className="muted">{message}</p>}<button className="button" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button></form><p className="muted">No account? <Link href="/signup">Create one</Link></p></main>; }
