@@ -5,10 +5,12 @@ import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { WorkoutHeader } from "@/components/WorkoutHeader";
+import { WorkoutBurnForm } from "@/components/WorkoutBurnForm";
 import { defaultPlan } from "@/lib/defaultPlan";
 import { loadActiveDay, loadPlan, loadSessions, saveActiveDay, savePlan, saveSessions } from "@/lib/storage";
 import type { CompletedSet, WorkoutPlan, WorkoutSession } from "@/lib/types";
 import { getOrCreateSession, progress, updateSet } from "@/lib/workout";
+import { defaultSessionType, workoutBurnEstimate } from "@/lib/workoutBurn";
 
 export default function Home() {
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
@@ -25,5 +27,5 @@ export default function Home() {
   const changeDay = (id: string) => { const day = plan.days.find((item) => item.id === id); if (day) persistSession(getOrCreateSession(sessions, day)); setActiveDayId(id); saveActiveDay(id); };
   const changeSet = (exerciseId: string, setIndex: number, change: Partial<CompletedSet>) => persistSession(updateSet(activeDay, session, { exerciseId, setIndex, ...change }));
 
-  return <AppShell><WorkoutHeader days={plan.days} activeDayId={activeDay.id} onDayChange={changeDay} {...status} />{activeDay.exercises.map((exercise) => <ExerciseCard key={exercise.id} exercise={exercise} sets={session.sets.filter((set) => set.exerciseId === exercise.id).sort((a, b) => a.setIndex - b.setIndex)} onSetChange={(setIndex, change) => changeSet(exercise.id, setIndex, change)} />)}</AppShell>;
+  return <AppShell><WorkoutHeader days={plan.days} activeDayId={activeDay.id} onDayChange={changeDay} {...status} />{status.done === status.total && status.total > 0 && <WorkoutBurnForm estimate={session.burnEstimate} defaultType={defaultSessionType(activeDay.name)} onSave={(duration, effort, sessionType) => persistSession({ ...session, burnEstimate: workoutBurnEstimate(duration, effort, sessionType) })} />}{activeDay.exercises.map((exercise) => <ExerciseCard key={exercise.id} exercise={exercise} sets={session.sets.filter((set) => set.exerciseId === exercise.id).sort((a, b) => a.setIndex - b.setIndex)} onSetChange={(setIndex, change) => changeSet(exercise.id, setIndex, change)} />)}</AppShell>;
 }

@@ -13,7 +13,8 @@ export function reconcileSession(day: WorkoutDay, session: WorkoutSession): Work
   const previous = new Map(session.sets.map((set) => [`${set.exerciseId}-${set.setIndex}`, set]));
   const sets = day.exercises.flatMap((exercise) => Array.from({ length: exercise.targetSets }, (_, setIndex) => previous.get(`${exercise.id}-${setIndex}`) ?? ({ exerciseId: exercise.id, setIndex, done: false })));
   const next = { ...session, workoutDayName: day.name, sets };
-  return { ...next, completed: progress(day, next).total > 0 && progress(day, next).done === progress(day, next).total };
+  const completed = progress(day, next).total > 0 && progress(day, next).done === progress(day, next).total;
+  return { ...next, completed, burnEstimate: completed ? next.burnEstimate : undefined };
 }
 export function progress(day: WorkoutDay, session: WorkoutSession) {
   const total = day.exercises.reduce((sum, exercise) => sum + exercise.targetSets, 0);
@@ -23,5 +24,6 @@ export function progress(day: WorkoutDay, session: WorkoutSession) {
 export function updateSet(day: WorkoutDay, session: WorkoutSession, change: Partial<CompletedSet> & Pick<CompletedSet, "exerciseId" | "setIndex">): WorkoutSession {
   const sets = session.sets.map((set) => set.exerciseId === change.exerciseId && set.setIndex === change.setIndex ? { ...set, ...change } : set);
   const next = { ...session, sets };
-  return { ...next, completed: progress(day, next).total > 0 && progress(day, next).done === progress(day, next).total };
+  const completed = progress(day, next).total > 0 && progress(day, next).done === progress(day, next).total;
+  return { ...next, completed, burnEstimate: completed ? next.burnEstimate : undefined };
 }

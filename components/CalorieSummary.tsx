@@ -1,0 +1,10 @@
+import { MacroProgress } from "./MacroProgress";
+import type { NutritionTargets } from "@/lib/types";
+import type { WorkoutSession } from "@/lib/types";
+
+export function CalorieSummary({ targets, totals, workoutSession }: { targets: NutritionTargets; totals: { calories: number; protein: number; fat: number; carbs: number }; workoutSession?: WorkoutSession }) {
+  const remaining = targets.targetCalories - totals.calories;
+  const percent = targets.targetCalories ? Math.min(100, Math.round((totals.calories / targets.targetCalories) * 100)) : 0;
+  const burn = workoutSession?.burnEstimate;
+  return <section className="card nutrition-summary"><div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><div><p className="muted" style={{ margin: 0, fontSize: 13 }}>Target intake</p><h2 style={{ margin: "4px 0 0", fontSize: 26 }}>{targets.targetCalories.toLocaleString()} kcal</h2></div><div style={{ textAlign: "right" }}><p className="muted" style={{ margin: 0, fontSize: 13 }}>Base daily burn</p><strong>{targets.tdee.toLocaleString()} kcal</strong></div></div><div className="burn-copy">{burn ? <><p>Completed workout estimate: <strong>{burn.lowCalories}–{burn.highCalories} kcal</strong></p><p>Estimated daily burn: <strong>{targets.tdee + burn.lowCalories}–{targets.tdee + burn.highCalories} kcal</strong></p></> : <p className="muted">Today’s workout burn: {workoutSession?.completed ? "Add session type, duration, and effort on Today." : "Complete today’s workout to estimate."}</p>}</div><p style={{ margin: "20px 0 8px" }}>{totals.calories.toLocaleString()} / {targets.targetCalories.toLocaleString()} kcal</p><div className="progress"><span style={{ width: `${percent}%` }} /></div><p className="muted" style={{ margin: "8px 0 0", fontSize: 13 }}>{remaining >= 0 ? `${remaining.toLocaleString()} kcal remaining` : `${Math.abs(remaining).toLocaleString()} kcal over target`}</p><MacroProgress label="Protein" value={totals.protein} target={targets.protein} /><MacroProgress label="Fat" value={totals.fat} target={targets.fat} /><MacroProgress label="Carbs" value={totals.carbs} target={targets.carbs} /></section>;
+}
