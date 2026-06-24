@@ -18,8 +18,11 @@ export default function Home() {
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [activeDayId, setActiveDayId] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  useEffect(() => { (async () => { let savedPlan = await loadActivePlan(); if (!savedPlan) { await provisionPlan(defaultPlan); savedPlan = await loadActivePlan(); } if (!savedPlan) return; const dayId = loadActiveDay() ?? savedPlan.days[0]?.id ?? ""; setPlan(savedPlan); setActiveDayId(dayId); })().catch(() => {}); }, []);
+  useEffect(() => { let active = true; (async () => { try { setLoadError(null); let savedPlan = await loadActivePlan(); if (!savedPlan) { await provisionPlan(defaultPlan); savedPlan = await loadActivePlan(); } if (!savedPlan) throw new Error("Your plan could not be created."); const dayId = loadActiveDay() ?? savedPlan.days[0]?.id ?? ""; if (active) { setPlan(savedPlan); setActiveDayId(dayId); } } catch (error) { console.error("Unable to load today's plan", error); if (active) setLoadError("Couldn’t load today’s plan. Check your connection and try again."); } })(); return () => { active = false; }; }, [reloadKey]);
+  if (loadError) return <AppShell><h1 className="page-title">Gym Log</h1><p className="muted" style={{ margin: "12px 0 20px" }}>{loadError}</p><button className="button" onClick={() => setReloadKey((value) => value + 1)}>Retry</button></AppShell>;
   if (!plan) return <AppShell><p className="muted">Loading your log…</p></AppShell>;
   if (!plan.days.length) return <AppShell><h1 className="page-title">Gym Log</h1><EmptyState /></AppShell>;
   const activeDay = plan.days.find((day) => day.id === activeDayId) ?? plan.days[0];
