@@ -1,3 +1,4 @@
+import type { PeriodizationSettings } from "./periodization";
 import type { NutritionDay, NutritionProfile, WorkoutPlan, WorkoutSession } from "./types";
 
 export const PLAN_KEY = "gym-log-plan";
@@ -5,6 +6,7 @@ export const SESSION_KEY = "gym-log-sessions";
 export const ACTIVE_DAY_KEY = "gym-log-active-day";
 export const NUTRITION_PROFILE_KEY = "gym-log-nutrition-profile";
 export const NUTRITION_DAYS_KEY = "gym-log-nutrition-days";
+export const PERIODIZATION_KEY = "gym-log-periodization";
 
 function read<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
@@ -21,3 +23,5 @@ export const loadNutritionProfile = () => read<NutritionProfile>(NUTRITION_PROFI
 export const saveNutritionProfile = (profile: NutritionProfile) => write(NUTRITION_PROFILE_KEY, profile);
 export const loadNutritionDays = () => read<NutritionDay[]>(NUTRITION_DAYS_KEY) ?? [];
 export const saveNutritionDays = (days: NutritionDay[]) => write(NUTRITION_DAYS_KEY, days);
+export const loadPeriodizationSettings = () => read<PeriodizationSettings>(PERIODIZATION_KEY);
+export const savePeriodizationSettings = (settings: PeriodizationSettings) => write(PERIODIZATION_KEY, settings);
