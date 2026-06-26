@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import {
   clampCurrentWeek,
+  commitCurrentWeekInput,
   createDefaultPeriodizationSettings,
   getCalendarAllowedWeek,
   getCompletedTrainingStats,
@@ -22,6 +23,7 @@ function phaseId() {
 
 export default function PeriodizationPage() {
   const [settings, setSettings] = useState<PeriodizationSettings | null>(null);
+  const [currentWeekDraft, setCurrentWeekDraft] = useState("");
   const [message, setMessage] = useState("");
   const [completedStats, setCompletedStats] = useState({
     completedTrainingDaysSinceStart: 0,
@@ -32,6 +34,7 @@ export default function PeriodizationPage() {
     const saved = loadPeriodizationSettings() ?? createDefaultPeriodizationSettings();
     const normalized = normalizePeriodizationSettings(saved);
     setSettings(normalized);
+    setCurrentWeekDraft(String(normalized.manualCurrentWeek));
     savePeriodizationSettings(normalized);
     setCompletedStats(getCompletedTrainingStats(loadSessions(), normalized.startDate));
   }, []);
@@ -51,6 +54,7 @@ export default function PeriodizationPage() {
   const updateSettings = (next: PeriodizationSettings, feedback = "Saved.") => {
     const normalized = normalizePeriodizationSettings({ ...next, updatedAt: new Date().toISOString() });
     setSettings(normalized);
+    setCurrentWeekDraft(String(normalized.manualCurrentWeek));
     savePeriodizationSettings(normalized);
     setCompletedStats(getCompletedTrainingStats(loadSessions(), normalized.startDate));
     setMessage(feedback);
@@ -70,6 +74,17 @@ export default function PeriodizationPage() {
         ? `Current week cannot exceed Week ${derived.maxAllowedWeek} today.`
         : "Saved."
     );
+  };
+
+  const commitManualWeekDraft = () => {
+    if (!settings || !derived) return;
+    const result = commitCurrentWeekInput(
+      currentWeekDraft,
+      derived.currentWeek,
+      settings.totalWeeks,
+      derived.calendarAllowedWeek
+    );
+    updateSettings({ ...settings, manualCurrentWeek: result.week }, result.message);
   };
 
   const updatePhase = (phaseId: string, change: Partial<PeriodizationPhase>) => {
@@ -162,16 +177,35 @@ export default function PeriodizationPage() {
               inputMode="numeric"
               min="1"
               max={derived.maxAllowedWeek}
-              value={derived.currentWeek}
-              onChange={(event) => setManualWeek(Number(event.target.value))}
+              value={currentWeekDraft}
+              onChange={(event) => setCurrentWeekDraft(event.target.value)}
+              onBlur={commitManualWeekDraft}
+              onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
             />
           </label>
         </div>
         <div className="week-adjust">
-          <button className="button secondary small" onClick={() => setManualWeek(derived.currentWeek - 1)}>− Week</button>
-          <button className="button secondary small" onClick={() => setManualWeek(derived.currentWeek + 1)}>+ Week</button>
+          <button
+            className="button secondary small"
+            onClick={() => setManualWeek(derived.currentWeek - 1)}
+            disabled={derived.currentWeek <= 1}
+          >
+            − Week
+          </button>
+          <button
+            className="button secondary small"
+            onClick={() => setManualWeek(derived.currentWeek + 1)}
+            disabled={derived.currentWeek >= derived.maxAllowedWeek}
+          >
+            + Week
+          </button>
           <span className="muted">Allowed range: Week 1–{derived.maxAllowedWeek}</span>
         </div>
+        {derived.maxAllowedWeek === 1 && (
+          <p className="muted" style={{ margin: "8px 0 0", fontSize: 13 }}>
+            Later weeks unlock after enough calendar time passes, or after you set an earlier cycle start date.
+          </p>
+        )}
         {message && <p className="muted" role="status" style={{ margin: "12px 0 0", fontSize: 13 }}>{message}</p>}
       </section>
 

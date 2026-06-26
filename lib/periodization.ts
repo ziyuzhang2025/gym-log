@@ -76,6 +76,31 @@ export function clampCurrentWeek(
   return Math.max(1, Math.min(Math.floor(requestedWeek) || 1, safeAllowedWeek));
 }
 
+export function commitCurrentWeekInput(
+  input: string,
+  previousWeek: number,
+  totalWeeks: number,
+  calendarAllowedWeek: number
+) {
+  const maxAllowedWeek = Math.max(1, Math.min(Math.floor(calendarAllowedWeek) || 1, Math.max(1, Math.floor(totalWeeks) || 1)));
+  const parsedWeek = Number(input);
+
+  if (!input.trim() || !Number.isFinite(parsedWeek)) {
+    return {
+      week: clampCurrentWeek(previousWeek, totalWeeks, calendarAllowedWeek),
+      message: `Enter a week number between 1 and ${maxAllowedWeek}.`,
+    };
+  }
+
+  const week = clampCurrentWeek(parsedWeek, totalWeeks, calendarAllowedWeek);
+  return {
+    week,
+    message: week !== Math.floor(parsedWeek)
+      ? `Current week cannot exceed Week ${maxAllowedWeek} today.`
+      : "Saved.",
+  };
+}
+
 export function getCurrentPhase(
   phases: PeriodizationPhase[],
   currentWeek: number

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   clampCurrentWeek,
+  commitCurrentWeekInput,
   defaultPeriodizationSettings,
   getCalendarAllowedWeek,
   getCompletedTrainingStats,
@@ -25,6 +26,24 @@ test("current week is clamped by total weeks and calendar allowed week", () => {
   assert.equal(clampCurrentWeek(5, 12, 4), 4);
   assert.equal(clampCurrentWeek(0, 12, 4), 1);
   assert.equal(clampCurrentWeek(9, 2, 5), 2);
+});
+
+test("blank current week input keeps the previous saved week instead of becoming zero", () => {
+  const result = commitCurrentWeekInput("", 3, 12, 6);
+
+  assert.deepEqual(result, {
+    week: 3,
+    message: "Enter a week number between 1 and 6.",
+  });
+});
+
+test("current week input reports when the calendar limit blocks a larger week", () => {
+  const result = commitCurrentWeekInput("8", 3, 12, 4);
+
+  assert.deepEqual(result, {
+    week: 4,
+    message: "Current week cannot exceed Week 4 today.",
+  });
 });
 
 test("current phase is selected by current week", () => {
