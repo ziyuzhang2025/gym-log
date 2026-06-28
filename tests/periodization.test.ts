@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   clampCurrentWeek,
   commitCurrentWeekInput,
+  commitPositiveIntegerInput,
   defaultPeriodizationSettings,
   getCalendarAllowedWeek,
   getCompletedTrainingStats,
@@ -43,6 +44,24 @@ test("current week input reports when the calendar limit blocks a larger week", 
   assert.deepEqual(result, {
     week: 4,
     message: "Current week cannot exceed Week 4 today.",
+  });
+});
+
+test("blank positive integer input keeps the previous value while showing validation", () => {
+  const result = commitPositiveIntegerInput("", 12, { min: 1, max: 52, label: "Total weeks" });
+
+  assert.deepEqual(result, {
+    value: 12,
+    message: "Total weeks must be between 1 and 52.",
+  });
+});
+
+test("positive integer input clamps to configured bounds on commit", () => {
+  const result = commitPositiveIntegerInput("99", 12, { min: 1, max: 24, label: "End week" });
+
+  assert.deepEqual(result, {
+    value: 24,
+    message: "End week must be between 1 and 24.",
   });
 });
 

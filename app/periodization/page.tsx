@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import {
   clampCurrentWeek,
   commitCurrentWeekInput,
+  commitPositiveIntegerInput,
   createDefaultPeriodizationSettings,
   getCalendarAllowedWeek,
   getCompletedTrainingStats,
@@ -24,6 +25,8 @@ function phaseId() {
 export default function PeriodizationPage() {
   const [settings, setSettings] = useState<PeriodizationSettings | null>(null);
   const [currentWeekDraft, setCurrentWeekDraft] = useState("");
+  const [totalWeeksDraft, setTotalWeeksDraft] = useState("");
+  const [phaseWeekDrafts, setPhaseWeekDrafts] = useState<Record<string, { startWeek: string; endWeek: string }>>({});
   const [message, setMessage] = useState("");
   const [completedStats, setCompletedStats] = useState({
     completedTrainingDaysSinceStart: 0,
@@ -34,7 +37,7 @@ export default function PeriodizationPage() {
     const saved = loadPeriodizationSettings() ?? createDefaultPeriodizationSettings();
     const normalized = normalizePeriodizationSettings(saved);
     setSettings(normalized);
-    setCurrentWeekDraft(String(normalized.manualCurrentWeek));
+    syncNumberDrafts(normalized);
     savePeriodizationSettings(normalized);
     setCompletedStats(getCompletedTrainingStats(loadSessions(), normalized.startDate));
   }, []);
@@ -54,10 +57,21 @@ export default function PeriodizationPage() {
   const updateSettings = (next: PeriodizationSettings, feedback = "Saved.") => {
     const normalized = normalizePeriodizationSettings({ ...next, updatedAt: new Date().toISOString() });
     setSettings(normalized);
-    setCurrentWeekDraft(String(normalized.manualCurrentWeek));
+    syncNumberDrafts(normalized);
     savePeriodizationSettings(normalized);
     setCompletedStats(getCompletedTrainingStats(loadSessions(), normalized.startDate));
     setMessage(feedback);
+  };
+
+  const syncNumberDrafts = (next: PeriodizationSettings) => {
+    setCurrentWeekDraft(String(next.manualCurrentWeek));
+    setTotalWeeksDraft(String(next.totalWeeks));
+    setPhaseWeekDrafts(Object.fromEntries(
+      next.phases.map((phase) => [
+        phase.id,
+        { startWeek: String(phase.startWeek), endWeek: String(phase.endWeek) },
+      ])
+    ));
   };
 
   const setField = <K extends keyof PeriodizationSettings>(field: K, value: PeriodizationSettings[K]) => {
@@ -87,12 +101,45 @@ export default function PeriodizationPage() {
     updateSettings({ ...settings, manualCurrentWeek: result.week }, result.message);
   };
 
+  const commitTotalWeeksDraft = () => {
+    if (!settings) return;
+    const result = commitPositiveIntegerInput(totalWeeksDraft, settings.totalWeeks, {
+      min: 1,
+      max: 52,
+      label: "Total weeks",
+    });
+    updateSettings({ ...settings, totalWeeks: result.value }, result.message);
+  };
+
   const updatePhase = (phaseId: string, change: Partial<PeriodizationPhase>) => {
     if (!settings) return;
     updateSettings({
       ...settings,
       phases: settings.phases.map((phase) => phase.id === phaseId ? { ...phase, ...change } : phase),
     });
+  };
+
+  const setPhaseWeekDraft = (phaseId: string, field: "startWeek" | "endWeek", value: string) => {
+    setPhaseWeekDrafts((previous) => ({
+      ...previous,
+      [phaseId]: {
+        startWeek: previous[phaseId]?.startWeek ?? "",
+        endWeek: previous[phaseId]?.endWeek ?? "",
+        [field]: value,
+      },
+    }));
+  };
+
+  const commitPhaseWeekDraft = (phase: PeriodizationPhase, field: "startWeek" | "endWeek") => {
+    if (!settings) return;
+    const draft = phaseWeekDrafts[phase.id]?.[field] ?? String(phase[field]);
+    const result = commitPositiveIntegerInput(draft, phase[field], {
+      min: 1,
+      max: settings.totalWeeks,
+      label: field === "startWeek" ? "Start week" : "End week",
+    });
+    updatePhase(phase.id, { [field]: result.value });
+    setMessage(result.message);
   };
 
   const addPhase = () => {
@@ -165,8 +212,11 @@ export default function PeriodizationPage() {
               type="number"
               inputMode="numeric"
               min="1"
-              value={settings.totalWeeks}
-              onChange={(event) => setField("totalWeeks", Number(event.target.value))}
+              max="52"
+              value={totalWeeksDraft}
+              onChange={(event) => setTotalWeeksDraft(event.target.value)}
+              onBlur={commitTotalWeeksDraft}
+              onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
             />
           </label>
           <label>
@@ -224,11 +274,31 @@ export default function PeriodizationPage() {
                 </label>
                 <label>
                   Start week
-                  <input className="field" type="number" min="1" max={settings.totalWeeks} value={phase.startWeek} onChange={(event) => updatePhase(phase.id, { startWeek: Number(event.target.value) })} />
+                  <input
+                    className="field"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    max={settings.totalWeeks}
+                    value={phaseWeekDrafts[phase.id]?.startWeek ?? String(phase.startWeek)}
+                    onChange={(event) => setPhaseWeekDraft(phase.id, "startWeek", event.target.value)}
+                    onBlur={() => commitPhaseWeekDraft(phase, "startWeek")}
+                    onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+                  />
                 </label>
                 <label>
                   End week
-                  <input className="field" type="number" min="1" max={settings.totalWeeks} value={phase.endWeek} onChange={(event) => updatePhase(phase.id, { endWeek: Number(event.target.value) })} />
+                  <input
+                    className="field"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    max={settings.totalWeeks}
+                    value={phaseWeekDrafts[phase.id]?.endWeek ?? String(phase.endWeek)}
+                    onChange={(event) => setPhaseWeekDraft(phase.id, "endWeek", event.target.value)}
+                    onBlur={() => commitPhaseWeekDraft(phase, "endWeek")}
+                    onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+                  />
                 </label>
               </div>
               <label style={{ display: "block", marginTop: 12 }}>

@@ -101,6 +101,30 @@ export function commitCurrentWeekInput(
   };
 }
 
+export function commitPositiveIntegerInput(
+  input: string,
+  previousValue: number,
+  options: { min: number; max: number; label: string }
+) {
+  const min = Math.max(1, Math.floor(options.min) || 1);
+  const max = Math.max(min, Math.floor(options.max) || min);
+  const parsedValue = Number(input);
+  const message = `${options.label} must be between ${min} and ${max}.`;
+
+  if (!input.trim() || !Number.isFinite(parsedValue)) {
+    return {
+      value: Math.max(min, Math.min(Math.floor(previousValue) || min, max)),
+      message,
+    };
+  }
+
+  const value = Math.max(min, Math.min(Math.floor(parsedValue), max));
+  return {
+    value,
+    message: value !== Math.floor(parsedValue) ? message : "Saved.",
+  };
+}
+
 export function getCurrentPhase(
   phases: PeriodizationPhase[],
   currentWeek: number
