@@ -209,8 +209,9 @@ export default function PeriodizationPage() {
             Total weeks
             <input
               className="field"
-              type="number"
+              type="text"
               inputMode="numeric"
+              pattern="[0-9]*"
               min="1"
               max="52"
               value={totalWeeksDraft}
@@ -223,8 +224,9 @@ export default function PeriodizationPage() {
             Current week
             <input
               className="field"
-              type="number"
+              type="text"
               inputMode="numeric"
+              pattern="[0-9]*"
               min="1"
               max={derived.maxAllowedWeek}
               value={currentWeekDraft}
@@ -276,8 +278,9 @@ export default function PeriodizationPage() {
                   Start week
                   <input
                     className="field"
-                    type="number"
+                    type="text"
                     inputMode="numeric"
+                    pattern="[0-9]*"
                     min="1"
                     max={settings.totalWeeks}
                     value={phaseWeekDrafts[phase.id]?.startWeek ?? String(phase.startWeek)}
@@ -290,8 +293,9 @@ export default function PeriodizationPage() {
                   End week
                   <input
                     className="field"
-                    type="number"
+                    type="text"
                     inputMode="numeric"
+                    pattern="[0-9]*"
                     min="1"
                     max={settings.totalWeeks}
                     value={phaseWeekDrafts[phase.id]?.endWeek ?? String(phase.endWeek)}

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   clampCurrentWeek,
@@ -108,4 +109,11 @@ test("completed training stats count completed sessions since the cycle start", 
     completedTrainingDaysSinceStart: 3,
     estimatedCompletedWeeks: 1,
   });
+});
+
+test("periodization numeric drafts use text inputs so users can clear them before typing", () => {
+  const source = readFileSync(new URL("../app/periodization/page.tsx", import.meta.url), "utf8");
+
+  assert.doesNotMatch(source, /type="number"/);
+  assert.match(source, /inputMode="numeric"/);
 });
